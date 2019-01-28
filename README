@@ -12,3 +12,6 @@ Tests Implemented:
 TODO:
    Fix all encoding / decoding to conform to ASN1 BER spec
    Implement Tests / Benchmarks
+
+Reference:
+   https://github.com/cpusoft/go-study/blob/cbc0023ce92423f5e4dae7ba42750fd7ce5dc024/src/main/ber/ber.go
