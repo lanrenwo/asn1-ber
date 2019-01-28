@@ -310,6 +310,10 @@ func decodePacket(data []byte) (*Packet, []byte) {
 	if Debug {
 		fmt.Printf("decodePacket: enter %d\n", len(data))
 	}
+	if len(data) < 2 {
+                fmt.Println("data is empty")
+		return nil, nil
+	}
 
 	p := new(Packet)
 
@@ -331,7 +335,14 @@ func decodePacket(data []byte) (*Packet, []byte) {
 	p.Children = make([]*Packet, 0, 2)
 
 	p.Value = nil
-
+	if datapos+datalen > uint64(len(data)) {
+		if Debug {
+			fmt.Println(datapos, datalen, len(data))
+			fmt.Println("data is less than datapos+datalen", data)
+		}
+                fmt.Println("data is less than datapos+datalen")
+		return nil, nil
+	}
 	value_data := data[datapos : datapos+datalen]
 
 	if p.TagType == TypeConstructed {
