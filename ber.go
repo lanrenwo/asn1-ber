@@ -234,10 +234,10 @@ func ReadPacket(reader io.Reader) (*Packet, error) {
 			fmt.Printf("\n")
 		}
 	}
-        if idx+datalen > 3000 {
-            fmt.Println("Error: idx+datalen is ", idx+datalen)
-            return nil, err
-        }
+	if idx+datalen > 3000 {
+		fmt.Println("Error: idx+datalen is ", idx+datalen)
+		return nil, fmt.Errorf("idx+datalen is %d, very too large\n", idx+datalen)
+	}
 	buf = resizeBuffer(buf, idx+datalen)
 	err = readBytes(reader, buf[idx:])
 
