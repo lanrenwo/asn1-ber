@@ -258,7 +258,7 @@ func ReadPacket(reader io.Reader) (*Packet, error) {
 	return p, nil
 }
 
-func DecodeString(data []byte) (string) {
+func DecodeString(data []byte) string {
 	return string(data)
 }
 
@@ -304,18 +304,21 @@ func EncodeInteger(val uint64) []byte {
 }
 
 func DecodePacket(data []byte) *Packet {
-	p, _ := decodePacket(data)
-
+	p, _, err := decodePacket(data)
+	if err != nil {
+		fmt.Println("DecodePacket", err)
+		return nil
+	}
 	return p
 }
 
-func decodePacket(data []byte) (*Packet, []byte) {
+func decodePacket(data []byte) (*Packet, []byte, error) {
 	if Debug {
 		fmt.Printf("decodePacket: enter %d\n", len(data))
 	}
 	if len(data) < 2 {
-                fmt.Println("data is empty")
-		return nil, nil
+		fmt.Println("data is empty")
+		return nil, nil, fmt.Errorf("data is empty")
 	}
 
 	p := new(Packet)
@@ -330,6 +333,12 @@ func decodePacket(data []byte) (*Packet, []byte) {
 	if datalen&128 != 0 {
 		datalen -= 128
 		datapos += datalen
+		if 2+datalen > uint64(len(data)) {
+			if Debug {
+				fmt.Println("data is less than 2+datalen")
+			}
+			return nil, nil, fmt.Errorf("data is less than 2+datalen")
+		}
 		datalen = DecodeInteger(data[2 : 2+datalen])
 	}
 
@@ -343,16 +352,18 @@ func decodePacket(data []byte) (*Packet, []byte) {
 			fmt.Println(datapos, datalen, len(data))
 			fmt.Println("data is less than datapos+datalen", data)
 		}
-                fmt.Println("data is less than datapos+datalen")
-		return nil, nil
+		return nil, nil, fmt.Errorf("data is less than datapos+datalen %d,%d,%d,%s", datapos, datalen, len(data), data)
 	}
 	value_data := data[datapos : datapos+datalen]
 
 	if p.TagType == TypeConstructed {
 		for len(value_data) != 0 {
 			var child *Packet
-
-			child, value_data = decodePacket(value_data)
+			var err error
+			child, value_data, err = decodePacket(value_data)
+			if err != nil {
+				return nil, nil, err
+			}
 			p.AppendChild(child)
 		}
 	} else if p.ClassType == ClassUniversal {
@@ -401,7 +412,7 @@ func decodePacket(data []byte) (*Packet, []byte) {
 		p.Data.Write(data[datapos : datapos+datalen])
 	}
 
-	return p, data[datapos+datalen:]
+	return p, data[datapos+datalen:], nil
 }
 
 func (p *Packet) DataLength() uint64 {
