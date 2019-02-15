@@ -138,28 +138,21 @@ func printPacket(p *Packet, indent int, printBytes bool) {
 	}
 
 	class_str := ClassMap[p.ClassType]
-
 	tagtype_str := TypeMap[p.TagType]
-
 	tag_str := fmt.Sprintf("0x%02X", p.Tag)
-
 	if p.ClassType == ClassUniversal {
 		tag_str = TagMap[p.Tag]
 	}
 
 	value := fmt.Sprint(p.Value)
 	description := ""
-
 	if p.Description != "" {
 		description = p.Description + ": "
 	}
-
 	fmt.Printf("%s%s(%s, %s, %s) Len=%d %q\n", indent_str, description, class_str, tagtype_str, tag_str, p.Data.Len(), value)
-
 	if printBytes {
 		PrintBytes(p.Bytes(), indent_str)
 	}
-
 	for _, child := range p.Children {
 		printPacket(child, indent+1, printBytes)
 	}
@@ -167,9 +160,7 @@ func printPacket(p *Packet, indent int, printBytes bool) {
 
 func resizeBuffer(in []byte, new_size uint64) (out []byte) {
 	out = make([]byte, new_size)
-
 	copy(out, in)
-
 	return
 }
 
@@ -190,47 +181,35 @@ func readBytes(reader io.Reader, buf []byte) error {
 
 func ReadPacket(reader io.Reader) (*Packet, error) {
 	buf := make([]byte, 2)
-
 	err := readBytes(reader, buf)
-
 	if err != nil {
 		return nil, err
 	}
 
 	idx := uint64(2)
 	datalen := uint64(buf[1])
-
 	if Debug {
 		fmt.Printf("Read: datalen = %d len(buf) = %d ", datalen, len(buf))
-
 		for _, b := range buf {
 			fmt.Printf("%02X ", b)
 		}
-
 		fmt.Printf("\n")
 	}
 
 	if datalen&128 != 0 {
 		a := datalen - 128
-
 		idx += a
 		buf = resizeBuffer(buf, 2+a)
-
 		err := readBytes(reader, buf[2:])
-
 		if err != nil {
 			return nil, err
 		}
-
 		datalen = DecodeInteger(buf[2 : 2+a])
-
 		if Debug {
 			fmt.Printf("Read: a = %d  idx = %d  datalen = %d  len(buf) = %d", a, idx, datalen, len(buf))
-
 			for _, b := range buf {
 				fmt.Printf("%02X ", b)
 			}
-
 			fmt.Printf("\n")
 		}
 	}
@@ -240,11 +219,9 @@ func ReadPacket(reader io.Reader) (*Packet, error) {
 	}
 	buf = resizeBuffer(buf, idx+datalen)
 	err = readBytes(reader, buf[idx:])
-
 	if err != nil {
 		return nil, err
 	}
-
 	if Debug {
 		fmt.Printf("Read: len( buf ) = %d  idx=%d datalen=%d idx+datalen=%d\n", len(buf), idx, datalen, idx+datalen)
 
@@ -273,13 +250,9 @@ func DecodeInteger(data []byte) (ret uint64) {
 
 func EncodeInteger(val uint64) []byte {
 	var out bytes.Buffer
-
 	found := false
-
 	shift := uint(56)
-
 	mask := uint64(0xFF00000000000000)
-
 	for mask > 0 {
 		if !found && (val&mask != 0) {
 			found = true
@@ -488,33 +461,25 @@ func NewSequence(Description string) *Packet {
 
 func NewBoolean(ClassType, TagType, Tag uint8, Value bool, Description string) *Packet {
 	intValue := 0
-
 	if Value {
 		intValue = 1
 	}
-
 	p := Encode(ClassType, TagType, Tag, nil, Description)
-
 	p.Value = Value
 	p.Data.Write(EncodeInteger(uint64(intValue)))
-
 	return p
 }
 
 func NewInteger(ClassType, TagType, Tag uint8, Value uint64, Description string) *Packet {
 	p := Encode(ClassType, TagType, Tag, nil, Description)
-
 	p.Value = Value
 	p.Data.Write(EncodeInteger(Value))
-
 	return p
 }
 
 func NewString(ClassType, TagType, Tag uint8, Value, Description string) *Packet {
 	p := Encode(ClassType, TagType, Tag, nil, Description)
-
 	p.Value = Value
 	p.Data.Write([]byte(Value))
-
 	return p
 }
